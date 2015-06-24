@@ -9,6 +9,7 @@
   "author": "Sergey Tkachenko (https://github.com/tkachenko1503)",
   "license": "MIT",
   "dependencies": {
-    "Response": "git://github.com/B-Vladi/Response.git#0.0.35"
+    "Response": "git://github.com/B-Vladi/Response.git#0.0.35",
+    "EventEmitter": "git+https://github.com/B-Vladi/EventEmitter.git#0.2.5"
   }
 }
