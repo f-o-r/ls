@@ -1,11 +1,12 @@
 'use strict';
 
 var Response = require('Response');
-var EventEmitter = require('EventEmitter');
 
-var emitter = new EventEmitter();
+var KEY_REGEXP = /^change:(.*)$/;
+
 var ls = {};
 var storage = checkAndGetStorage();
+var addListener = getListenerFunc();
 
 module.exports = ls;
 
@@ -35,7 +36,7 @@ ls.set = function (key, value, strict) {
 };
 
 ls.get = function (key, type) {
-    var result = new Response();
+    var r = new Response();
     var queue = new Response.Queue();
 
     queue
@@ -48,15 +49,24 @@ ls.get = function (key, type) {
         .push(queue.resolve)
         .start();
 
-    return result.listen(queue);
+    return r.listen(queue);
 };
 
 ls.getValue = function (key, type) {
-    // body...
+    var r = this.get(key, type);
+    return r.isResolved() ? r.getResult() : null;
 };
 
 ls.on = function (key, listener, context) {
+    var name = getKeyName(key);
 
+    addListener('storage', function(e) {
+        if (e.key === name && e.oldValue !== e.newValue) {
+            listener.call(context, e.newValue);
+        }
+    }, false);
+
+    return this;
 };
 
 ls.once = function (key, listener, context) {
@@ -79,6 +89,15 @@ function checkAndGetStorage() {
     } catch (exception) {}
 }
 
+function getListenerFunc() {
+    if ('v'=='\v') { // Note: IE listens on document
+        return document.attachEvent.bind(document);
+    } else if (window.opera || /webkit/i.test( navigator.userAgent )){ // Note: Opera and WebKits listens on window
+        return window.addEventListener.bind(window);
+    } else { // Note: FF listens on document.body or document
+        return document.body.addEventListener.bind(document.body);
+    }
+}
 function stringifyValue(value) {
     var result;
 
@@ -97,4 +116,8 @@ function parseData(data) {
     } else {
         this.resolve(data);
     }
+}
+
+function getKeyName(key) {
+    return key.replace(KEY_REGEXP, '$1');
 }
