@@ -20,27 +20,35 @@ if (!storage) {
 ls.set = function (key, value, strict) {
     var r = new Response();
     var stringValue = stringifyValue(value);
-    var success;
 
-    try {
-        storage.setItem(key, stringValue);
-        success = strict ? storage.getItem(key) === stringValue : true;
-    } catch (error) {
-        r.reject(error);
-        success = false
-    }
+    r.invoke(storage.setItem, [key, stringValue], storage);
 
-    if (success) {
-        r.resolve();
-    } else {
-        r.reject();
+    if (!r.isRejected()) {
+        if (strict && r.invoke(storage.getItem, [key], storage) !== stringValue) {
+            r.reject();
+        } else {
+            r.resolve(stringValue);
+        }
     }
 
     return r;
 };
 
 ls.get = function (key, type) {
-    // body...
+    var result = new Response();
+    var queue = new Response.Queue();
+
+    queue
+        .setData({
+            key: key,
+            type: type
+        })
+        .push(getItem)
+        .push(parseData)
+        .push(queue.resolve)
+        .start();
+
+    return result.listen(queue);
 };
 
 ls.getValue = function (key, type) {
@@ -77,4 +85,16 @@ function stringifyValue(value) {
     result = JSON.stringify(value);
 
     return result;
+}
+
+function getItem() {
+    return this.invoke(storage.getItem, [this.data.key], storage);
+}
+
+function parseData(data) {
+    if (this.data.type === 'json') {
+        return this.invoke(JSON.parse, [data]);
+    } else {
+        this.resolve(data);
+    }
 }
