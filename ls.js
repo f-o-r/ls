@@ -18,7 +18,25 @@ if (!storage) {
 }
 
 ls.set = function (key, value, strict) {
+    var r = new Response();
+    var stringValue = stringifyValue(value);
+    var success;
 
+    try {
+        storage.setItem(key, stringValue);
+        success = strict ? storage.getItem(key) === stringValue : true;
+    } catch (error) {
+        r.reject(error);
+        success = false
+    }
+
+    if (success) {
+        r.resolve();
+    } else {
+        r.reject();
+    }
+
+    return r;
 };
 
 ls.get = function (key, type) {
@@ -51,4 +69,12 @@ function checkAndGetStorage() {
         storage.removeItem(test);
         return result && storage;
     } catch (exception) {}
+}
+
+function stringifyValue(value) {
+    var result;
+
+    result = JSON.stringify(value);
+
+    return result;
 }
