@@ -1,0 +1,15 @@
+{
+  "name": "ls",
+  "version": "0.0.1",
+  "description": "Cross-browser wrapper for localStorage",
+  "main": "ls.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sergey Tkachenko (https://github.com/tkachenko1503)",
+  "license": "MIT",
+  "dependencies": {
+    "Response": "git://github.com/B-Vladi/Response.git#0.0.35",
+    "EventEmitter": "git+https://github.com/B-Vladi/EventEmitter.git#0.2.5"
+  }
+}
