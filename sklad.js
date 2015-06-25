@@ -14,10 +14,6 @@ sklad.isSupported = function () {
     return !!storage;
 };
 
-if (!storage) {
-    return;
-}
-
 addListener = getListenerFunc();
 
 addListener('storage', function (e) {
@@ -32,7 +28,7 @@ sklad.set = function (key, value, strict) {
     var stringValue = stringifyValue(value);
 
     queue
-        .setData({
+        .setData('params', {
             key: key,
             val: stringValue,
             strict: strict
@@ -50,7 +46,7 @@ sklad.get = function (key, type) {
     var queue = new Response.Queue();
 
     queue
-        .setData({
+        .setData('params', {
             key: key,
             type: type
         })
@@ -91,21 +87,30 @@ function getListenerFunc() {
 
 function stringifyValue(value) {
     var result;
-
-    result = JSON.stringify(value);
-    return result;
+    if (typeof value === 'string') {
+        return value;
+    } else {
+        result = JSON.stringify(value);
+        return result;
+    }
 }
 
 function setItem() {
-    this.invoke(storage.setItem, [this.data.key, this.data.val], storage);
+    var params = this.getData('params');
+
+    this.invoke(storage.setItem, [params.key, params.val], storage);
 }
 
 function getItem() {
-    return this.invoke(storage.getItem, [this.data.key], storage);
+    var params = this.getData('params');
+
+    return this.invoke(storage.getItem, [params.key], storage);
 }
 
 function parseData(data) {
-    if (this.data.type === 'json') {
+    var params = this.getData('params');
+
+    if (params.type === 'json') {
         return this.invoke(JSON.parse, [data]);
     } else {
         this.resolve(data);
@@ -113,7 +118,9 @@ function parseData(data) {
 }
 
 function checkSavedItem(data) {
-    if (this.data.strict && data !== this.data.val;) {
+    var params = this.getData('params');
+
+    if (params.strict && data !== params.val) {
         this.reject();
     } else {
         this.resolve(data);
