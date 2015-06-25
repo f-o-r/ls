@@ -3,10 +3,8 @@
 var Response = require('Response');
 var EventEmitter = require('EventEmitter');
 
-var KEY_REGEXP = /^change:(.*)$/;
+var ls = new EventEmitter();
 
-var ls = {};
-var emitter;
 var storage = checkAndGetStorage();
 var addListener;
 
@@ -20,28 +18,31 @@ if (!storage) {
     return;
 }
 
-emitter = new EventEmitter();
 addListener = getListenerFunc();
 
 addListener('storage', function (e) {
-    emitter.trigger(e.key, e.newValue);
+    var event = 'change:' + e.key;
+
+    ls.emit(event, e.newValue);
 }, false);
 
 ls.set = function (key, value, strict) {
     var r = new Response();
+    var queue = new Response.Queue();
     var stringValue = stringifyValue(value);
 
-    r.invoke(storage.setItem, [key, stringValue], storage);
+    queue
+        .setData({
+            key: key,
+            val: stringValue,
+            strict: strict
+        })
+        .push(setItem)
+        .push(getItem)
+        .push(checkSavedItem)
+        .start();
 
-    if (!r.isRejected()) {
-        if (strict && r.invoke(storage.getItem, [key], storage) !== stringValue) {
-            r.reject();
-        } else {
-            r.resolve(stringValue);
-        }
-    }
-
-    return r;
+    return r.listen(queue);
 };
 
 ls.get = function (key, type) {
@@ -63,42 +64,18 @@ ls.get = function (key, type) {
 
 ls.getValue = function (key, type) {
     var r = this.get(key, type);
-    return r.isResolved() ? r.getResult() : null;
-};
-
-ls.on = function (key, listener, context) {
-    var name = getKeyName(key);
-
-    emitter.on(name, listener, context);
-
-    return this;
-};
-
-ls.once = function (key, listener, context) {
-    var name = getKeyName(key);
-
-    emitter.once(name, listener, context);
-
-    return this;
-};
-
-ls.off = function (key, listener, context) {
-    var name = getKeyName(key);
-
-    emitter.off(name, listener, context);
-
-    return this;
+    return r.getResult();
 };
 
 function checkAndGetStorage() {
     var test = new Date;
-    var storage;
+    var stor;
     var result;
     try {
-        (storage = window.localStorage).setItem(test, test);
-        result = storage.getItem(test) == test;
-        storage.removeItem(test);
-        return result && storage;
+        (stor = window.localStorage).setItem(test, test);
+        result = stor.getItem(test) == test;
+        stor.removeItem(test);
+        return result && stor;
     } catch (exception) {}
 }
 
@@ -116,8 +93,11 @@ function stringifyValue(value) {
     var result;
 
     result = JSON.stringify(value);
-
     return result;
+}
+
+function setItem() {
+    this.invoke(storage.setItem, [this.data.key, this.data.val], storage);
 }
 
 function getItem() {
@@ -132,6 +112,10 @@ function parseData(data) {
     }
 }
 
-function getKeyName(key) {
-    return key.replace(KEY_REGEXP, '$1');
+function checkSavedItem(data) {
+    if (this.data.strict && data !== this.data.val;) {
+        this.reject();
+    } else {
+        this.resolve(data);
+    }
 }
