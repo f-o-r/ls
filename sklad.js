@@ -3,14 +3,14 @@
 var Response = require('Response');
 var EventEmitter = require('EventEmitter');
 
-var ls = new EventEmitter();
+var sklad = new EventEmitter();
 
 var storage = checkAndGetStorage();
 var addListener;
 
-module.exports = ls;
+module.exports = sklad;
 
-ls.isSupported = function () {
+sklad.isSupported = function () {
     return !!storage;
 };
 
@@ -23,10 +23,10 @@ addListener = getListenerFunc();
 addListener('storage', function (e) {
     var event = 'change:' + e.key;
 
-    ls.emit(event, e.newValue);
+    sklad.emit(event, e.newValue);
 }, false);
 
-ls.set = function (key, value, strict) {
+sklad.set = function (key, value, strict) {
     var r = new Response();
     var queue = new Response.Queue();
     var stringValue = stringifyValue(value);
@@ -45,7 +45,7 @@ ls.set = function (key, value, strict) {
     return r.listen(queue);
 };
 
-ls.get = function (key, type) {
+sklad.get = function (key, type) {
     var r = new Response();
     var queue = new Response.Queue();
 
@@ -62,7 +62,7 @@ ls.get = function (key, type) {
     return r.listen(queue);
 };
 
-ls.getValue = function (key, type) {
+sklad.getValue = function (key, type) {
     var r = this.get(key, type);
     return r.getResult();
 };
