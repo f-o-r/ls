@@ -1,31 +1,54 @@
 'use strict';
 
+/**
+ * @fileOverview sklad.
+ */
+
 var Response = require('Response');
 var EventEmitter = require('EventEmitter');
 
 var sklad = new EventEmitter();
 
 var storage = checkAndGetStorage();
-var addListener;
+var addListener = getListenerFunc();
 
 module.exports = sklad;
 
+/**
+ * Проверяет доступность localStorage
+ * @return {Boolean}
+ */
 sklad.isSupported = function () {
     return !!storage;
 };
 
-addListener = getListenerFunc();
+/**
+ * Подписываемся на изменение значений в localStorage
+ * из других вкладок браузера
+ */
+addListener('storage', triggerChangeEvent, false);
 
-addListener('storage', function (e) {
+/**
+ * @param {Object} e Объект события изменение значений в localStorage
+ */
+function triggerChangeEvent(e) {
     var event = 'change:' + e.key;
 
     sklad.emit(event, e.newValue);
-}, false);
+}
 
+/**
+ * Устанавливаем значение в localStorage
+ * @param {*} key строка или все что может быть приведенно к строке
+ *                ключ в localStorage для сохраняемого значения
+ * @param {*} value сохраняемое значение
+ * @param {Boolean} [strict] флаг для проверки сохраненного значения
+ * @return {Response}
+ */
 sklad.set = function (key, value, strict) {
     var r = new Response();
     var queue = new Response.Queue();
-    var stringValue = stringifyValue(value);
+    var stringValue = JSON.stringify(value);
 
     queue
         .setData('params', {
@@ -41,6 +64,14 @@ sklad.set = function (key, value, strict) {
     return r.listen(queue);
 };
 
+/**
+ * Достаём значение из localStorage
+ * @param {*} key строка или все что может быть приведенно к строке
+ *                ключ сохраненного значения в localStorage
+ * @param {String} [type] если указан как 'json' парсим значение
+ *                      если нет отдаём строку
+ * @return {Response}
+ */
 sklad.get = function (key, type) {
     var r = new Response();
     var queue = new Response.Queue();
@@ -58,11 +89,26 @@ sklad.get = function (key, type) {
     return r.listen(queue);
 };
 
+/**
+ * Метод для получения непосредственно значения
+ * а не экземпляра Response
+ * @param {*} key строка или все что может быть приведенно к строке
+ *                ключ сохраненного значения в localStorage
+ * @param {String} [type] если указан как 'json' парсим значение
+ *                      если нет отдаём строку
+ * @return {*} значение из localStorage
+ */
 sklad.getValue = function (key, type) {
     var r = this.get(key, type);
     return r.getResult();
 };
 
+/**
+ * Проверяем наличие localStorage
+ * если доступен возвращаем ссылку на него
+ * если не доступен возвращаем false
+ * @return {Storage|Boolean}
+ */
 function checkAndGetStorage() {
     var test = new Date;
     var stor;
@@ -72,41 +118,56 @@ function checkAndGetStorage() {
         result = stor.getItem(test) == test;
         stor.removeItem(test);
         return result && stor;
-    } catch (exception) {}
+    } catch (exception) {
+        return false;
+    }
 }
 
+/**
+ * В зависимости от браузера возвращаем нужную функцию для подписки на событие 'storage'
+ * @return {Function}
+ */
 function getListenerFunc() {
-    if ('v'=='\v') { // Note: IE listens on document
+    if ('v'=='\v') {
+        // Note: IE listens on document
         return document.attachEvent.bind(document);
-    } else if (window.opera || /webkit/i.test( navigator.userAgent )){ // Note: Opera and WebKits listens on window
+    } else if (window.opera || /webkit/i.test( navigator.userAgent )){
+        // Note: Opera and WebKits listens on window
         return window.addEventListener.bind(window);
-    } else { // Note: FF listens on document.body or document
+    } else {
+        // Note: FF listens on document.body or document
         return document.body.addEventListener.bind(document.body);
     }
 }
 
-function stringifyValue(value) {
-    var result;
-    if (typeof value === 'string') {
-        return value;
-    } else {
-        result = JSON.stringify(value);
-        return result;
-    }
-}
-
+/**
+ * Безопасный метод для записи в localStorage
+ * если ловим ошибки реджектим очередь
+ * @this {Queue}
+ */
 function setItem() {
     var params = this.getData('params');
 
     this.invoke(storage.setItem, [params.key, params.val], storage);
 }
 
+/**
+ * Безопасный метод для чтения из localStorage
+ * @this {Queue}
+ * @return {*} значение из localStorage
+ */
 function getItem() {
     var params = this.getData('params');
 
     return this.invoke(storage.getItem, [params.key], storage);
 }
 
+/**
+ * В зависимости от ожидаемого формата ответа парсим строку в json
+ * или отдаём сырые данные
+ * @this {Queue}
+ * @return {*}
+ */
 function parseData(data) {
     var params = this.getData('params');
 
@@ -117,6 +178,10 @@ function parseData(data) {
     }
 }
 
+/**
+ * Проверяем сохраненное значение если указан strict режим
+ * @this {Queue}
+ */
 function checkSavedItem(data) {
     var params = this.getData('params');
 
