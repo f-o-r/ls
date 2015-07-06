@@ -104,6 +104,23 @@ sklad.getValue = function (key, type) {
 };
 
 /**
+ * Удаляем итэм из хранилища
+ * @param {String} key ключ сохранённого значения
+ * @return {Response}
+ */
+sklad.remove = function (key) {
+    var r = new Response();
+
+    r.invoke(storage.removeItem, [key], storage);
+
+    if (!r.isRejected()) {
+        r.resolve();
+    }
+
+    return r;
+}
+
+/**
  * Проверяем наличие localStorage
  * если доступен возвращаем ссылку на него
  * если не доступен возвращаем false
