@@ -7,35 +7,22 @@
 var Response = require('Response');
 var EventEmitter = require('EventEmitter');
 
-var sklad = new EventEmitter();
+var sklad;
+var addListener = getListenerFunction();
 
-var storage = checkAndGetStorage();
-var addListener = getListenerFunc();
+function Sklad() {
+    EventEmitter.call(this);
+}
 
-module.exports = sklad;
+Sklad.prototype.store = checkAndGetStorage();
 
 /**
  * Проверяет доступность localStorage
  * @return {Boolean}
  */
-sklad.isSupported = function () {
-    return !!storage;
+Sklad.prototype.isSupported = function () {
+    return !!this.store;
 };
-
-/**
- * Подписываемся на изменение значений в localStorage
- * из других вкладок браузера
- */
-addListener('storage', triggerChangeEvent, false);
-
-/**
- * @param {Object} e Объект события изменение значений в localStorage
- */
-function triggerChangeEvent(e) {
-    var event = 'change:' + e.key;
-
-    sklad.emit(event, e.newValue);
-}
 
 /**
  * Устанавливаем значение в localStorage
@@ -45,10 +32,14 @@ function triggerChangeEvent(e) {
  * @param {Boolean} [strict] флаг для проверки сохраненного значения
  * @return {Response}
  */
-sklad.set = function (key, value, strict) {
+Sklad.prototype.set = function (key, value, strict) {
     var r = new Response();
     var queue = new Response.Queue();
     var stringValue = JSON.stringify(value);
+
+    if (!stringValue) {
+        return r.reject("Bad param - value");
+    }
 
     queue
         .setData('params', {
@@ -72,7 +63,7 @@ sklad.set = function (key, value, strict) {
  *                      если нет отдаём строку
  * @return {Response}
  */
-sklad.get = function (key, type) {
+Sklad.prototype.get = function (key, type) {
     var r = new Response();
     var queue = new Response.Queue();
 
@@ -81,8 +72,13 @@ sklad.get = function (key, type) {
             key: key,
             type: type
         })
-        .push(getItem)
-        .push(parseData)
+        .push(getItem);
+
+    if (type) {
+        queue.push(parseData);
+    }
+
+    queue
         .push(queue.resolve)
         .start();
 
@@ -98,9 +94,10 @@ sklad.get = function (key, type) {
  *                      если нет отдаём строку
  * @return {*} значение из localStorage
  */
-sklad.getValue = function (key, type) {
-    var r = this.get(key, type);
-    return r.getResult();
+Sklad.prototype.getValue = function (key, type) {
+    return this
+        .get(key, type)
+        .getResult();
 };
 
 /**
@@ -108,7 +105,7 @@ sklad.getValue = function (key, type) {
  * @param {String} key ключ сохранённого значения
  * @return {Response}
  */
-sklad.remove = function (key) {
+Sklad.prototype.remove = function (key) {
     var r = new Response();
 
     r.invoke(storage.removeItem, [key], storage);
@@ -121,21 +118,42 @@ sklad.remove = function (key) {
 }
 
 /**
+ * @param {Object} e Объект события изменение значений в localStorage
+ * @private
+ */
+Sklad.prototype._triggerChangeEvent = function (e) {
+    var event = 'change:' + e.key;
+
+    this.emit(event, e.newValue);
+}
+
+sklad = new Sklad();
+
+/**
+ * Подписываемся на изменение значений в localStorage
+ * из других вкладок браузера
+ */
+addListener('storage', sklad._triggerChangeEvent.bind(sklad), false);
+
+module.exports = sklad;
+
+/**
  * Проверяем наличие localStorage
  * если доступен возвращаем ссылку на него
  * если не доступен возвращаем false
  * @return {Storage|Boolean}
  */
 function checkAndGetStorage() {
-    var test = new Date;
+    var test = new Date();
     var stor;
     var result;
+
     try {
         (stor = window.localStorage).setItem(test, test);
         result = stor.getItem(test) == test;
         stor.removeItem(test);
         return result && stor;
-    } catch (exception) {
+    } catch (error) {
         return false;
     }
 }
@@ -144,7 +162,7 @@ function checkAndGetStorage() {
  * В зависимости от браузера возвращаем нужную функцию для подписки на событие 'storage'
  * @return {Function}
  */
-function getListenerFunc() {
+function getListenerFunction() {
     if ('v'=='\v') {
         // Note: IE listens on document
         return document.attachEvent.bind(document);
@@ -190,8 +208,6 @@ function parseData(data) {
 
     if (params.type === 'json') {
         return this.invoke(JSON.parse, [data]);
-    } else {
-        this.resolve(data);
     }
 }
 
