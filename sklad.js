@@ -118,13 +118,13 @@ Sklad.prototype.remove = function (key) {
 }
 
 /**
- * @param {Object} e Объект события изменение значений в localStorage
+ * @param {Object} event Объект события изменение значений в localStorage
  * @private
  */
-Sklad.prototype._triggerChangeEvent = function (e) {
-    var event = 'change:' + e.key;
+Sklad.prototype._triggerChangeEvent = function (event) {
+    var event = 'change:' + event.key;
 
-    this.emit(event, e.newValue);
+    this.emit(event, event.newValue);
 }
 
 sklad = new Sklad();
@@ -145,14 +145,14 @@ module.exports = sklad;
  */
 function checkAndGetStorage() {
     var test = new Date();
-    var stor;
+    var _storage;
     var result;
 
     try {
-        (stor = window.localStorage).setItem(test, test);
-        result = stor.getItem(test) == test;
-        stor.removeItem(test);
-        return result && stor;
+        (_storage = window.localStorage).setItem(test, test);
+        result = _storage.getItem(test) == test;
+        _storage.removeItem(test);
+        return result && _storage;
     } catch (error) {
         return false;
     }
