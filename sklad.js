@@ -141,7 +141,7 @@ var triggerChangeEvent = function (event) {
  * Подписываемся на изменение значений в localStorage
  * из других вкладок браузера
  */
- subscribeToStorage(triggerChangeEvent);
+subscribeToStorage(triggerChangeEvent);
 
 module.exports = sklad;
 
@@ -162,7 +162,7 @@ function checkAndGetStorage() {
         _storage.removeItem(test);
         return result && _storage;
     } catch (error) {
-        return false;
+        return undefined;
     }
 }
 
