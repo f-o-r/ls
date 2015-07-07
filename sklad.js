@@ -8,11 +8,14 @@ var Response = require('Response');
 var EventEmitter = require('EventEmitter');
 
 var sklad;
-var addListener = getListenerFunction();
 
 function Sklad() {
     EventEmitter.call(this);
 }
+
+Sklad.prototype = new EventEmitter();
+
+Sklad.prototype.constructor = Sklad;
 
 Sklad.prototype.store = checkAndGetStorage();
 
@@ -44,13 +47,19 @@ Sklad.prototype.set = function (key, value, strict) {
     queue
         .setData('params', {
             key: key,
-            val: stringValue,
-            strict: strict
+            val: stringValue
         })
-        .push(setItem)
-        .push(getItem)
-        .push(checkSavedItem)
-        .start();
+        .push(setItem);
+
+    if (strict) {
+        queue
+            .push(getItem)
+            .push(checkSavedItem);
+    } else {
+        queue.push(queue.resolve);
+    }
+
+    queue.start();
 
     return r.listen(queue);
 };
@@ -117,23 +126,22 @@ Sklad.prototype.remove = function (key) {
     return r;
 }
 
+sklad = new Sklad();
+
 /**
  * @param {Object} event Объект события изменение значений в localStorage
- * @private
  */
-Sklad.prototype._triggerChangeEvent = function (event) {
+var triggerChangeEvent = function (event) {
     var event = 'change:' + event.key;
 
     this.emit(event, event.newValue);
-}
-
-sklad = new Sklad();
+}.bind(sklad);
 
 /**
  * Подписываемся на изменение значений в localStorage
  * из других вкладок браузера
  */
-addListener('storage', sklad._triggerChangeEvent.bind(sklad), false);
+ subscribeToStorage(triggerChangeEvent);
 
 module.exports = sklad;
 
@@ -162,16 +170,16 @@ function checkAndGetStorage() {
  * В зависимости от браузера возвращаем нужную функцию для подписки на событие 'storage'
  * @return {Function}
  */
-function getListenerFunction() {
+function subscribeToStorage(handler) {
     if ('v'=='\v') {
         // Note: IE listens on document
-        return document.attachEvent.bind(document);
+        document.attachEvent('onstorage', handler);
     } else if (window.opera || /webkit/i.test( navigator.userAgent )){
         // Note: Opera and WebKits listens on window
-        return window.addEventListener.bind(window);
+        return window.addEventListener('storage', handler, false);
     } else {
         // Note: FF listens on document.body or document
-        return document.body.addEventListener.bind(document.body);
+        return document.body.addEventListener('storage', handler, false);
     }
 }
 
@@ -208,6 +216,8 @@ function parseData(data) {
 
     if (params.type === 'json') {
         return this.invoke(JSON.parse, [data]);
+    } else {
+        return data;
     }
 }
 
@@ -218,7 +228,7 @@ function parseData(data) {
 function checkSavedItem(data) {
     var params = this.getData('params');
 
-    if (params.strict && data !== params.val) {
+    if (data !== params.val) {
         this.reject();
     } else {
         this.resolve(data);
