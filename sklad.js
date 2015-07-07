@@ -111,7 +111,11 @@ sklad.getValue = function (key, type) {
 sklad.remove = function (key) {
     var r = new Response();
 
-    r.invoke(storage.removeItem, [key], storage);
+    if (sklad.store) {
+        r.invoke(sklad.store.removeItem, [key], sklad.store);
+    } else {
+        r.reject();
+    }
 
     if (!r.isRejected()) {
         r.resolve();
@@ -165,7 +169,11 @@ function getListenerFunc() {
 function setItem() {
     var params = this.getData('params');
 
-    this.invoke(storage.setItem, [params.key, params.val], storage);
+    if (sklad.store) {
+        this.invoke(sklad.store.setItem, [params.key, params.val], sklad.store);
+    } else {
+        this.reject();
+    }
 }
 
 /**
@@ -176,7 +184,12 @@ function setItem() {
 function getItem() {
     var params = this.getData('params');
 
-    return this.invoke(storage.getItem, [params.key], storage);
+    if (sklad.store) {
+        return this.invoke(sklad.store.getItem, [params.key], sklad.store);
+    } else {
+        this.reject();
+        return;
+    }
 }
 
 /**
