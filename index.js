@@ -188,12 +188,12 @@
 	sklad = new Sklad();
 
 	/**
-	 * @param {Object} e Объект события изменение значений в localStorage
+	 * @param {Object} event Объект события изменение значений в localStorage
 	 */
-	var triggerChangeEvent = function (e) {
-	    var event = 'change:' + e.key;
+	var triggerChangeEvent = function (event) {
+	    var eventName = 'change:' + event.key;
 
-	    this.emit(event, e.newValue);
+	    this.emit(eventName, event.newValue);
 	}.bind(sklad);
 
 	/**
