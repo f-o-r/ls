@@ -133,6 +133,7 @@ Sklad.prototype.remove = function (key) {
 sklad = new Sklad();
 
 /**
+ * Callback для события storage
  * @param {Object} event Объект события изменение значений в localStorage
  */
 var triggerChangeEvent = function (event) {
