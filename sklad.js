@@ -133,13 +133,12 @@ Sklad.prototype.remove = function (key) {
 sklad = new Sklad();
 
 /**
- * Callback для события storage
  * @param {Object} event Объект события изменение значений в localStorage
  */
 var triggerChangeEvent = function (event) {
-    var event = 'change:' + event.key;
+    var eventName = 'change:' + event.key;
 
-    this.emit(event, event.newValue);
+    this.emit(eventName, event.newValue);
 }.bind(sklad);
 
 /**
@@ -176,7 +175,7 @@ function checkAndGetStorage() {
  * @return {Function}
  */
 function subscribeToStorage(handler) {
-    if ('v'=='\v') {
+    if (window.attachEvent) {
         // Note: IE listens on document
         document.attachEvent('onstorage', handler);
     } else if (window.opera || /webkit/i.test( navigator.userAgent )){
