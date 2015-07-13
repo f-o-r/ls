@@ -1,0 +1,28 @@
+{
+  "name": "sklad",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "./node_modules/.bin/webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/f-o-r/ls.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/f-o-r/ls/issues"
+  },
+  "homepage": "https://github.com/f-o-r/ls",
+  "dependencies": {
+    "Response": "git://github.com/B-Vladi/Response.git#0.0.35",
+    "EventEmitter": "git+https://github.com/B-Vladi/EventEmitter.git#0.2.5"
+  },
+  "devDependencies": {
+    "node-libs-browser": "^0.5.2",
+    "webpack": "^1.10.1"
+  }
+}
