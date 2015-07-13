@@ -133,12 +133,12 @@ Sklad.prototype.remove = function (key) {
 sklad = new Sklad();
 
 /**
- * @param {Object} event Объект события изменение значений в localStorage
+ * @param {Object} e Объект события изменение значений в localStorage
  */
-var triggerChangeEvent = function (event) {
-    var event = 'change:' + event.key;
+var triggerChangeEvent = function (e) {
+    var event = 'change:' + e.key;
 
-    this.emit(event, event.newValue);
+    this.emit(event, e.newValue);
 }.bind(sklad);
 
 /**
