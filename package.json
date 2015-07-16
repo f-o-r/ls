@@ -4,12 +4,26 @@
   "description": "Cross-browser wrapper for localStorage",
   "main": "sklad.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/karma start test.conf.js"
   },
   "author": "Sergey Tkachenko (https://github.com/tkachenko1503)",
   "license": "MIT",
   "dependencies": {
     "Response": "git://github.com/B-Vladi/Response.git#0.0.35",
     "EventEmitter": "git+https://github.com/B-Vladi/EventEmitter.git#0.2.5"
+  },
+  "devDependencies": {
+    "jasmine": "2.0.1",
+    "jasmine-node": "^1.14.5",
+    "karma": "^0.12.24",
+    "karma-browserify": "^2.0.0",
+    "karma-chrome-launcher": "^0.1.5",
+    "karma-firefox-launcher": "^0.1.6",
+    "karma-ie-launcher": "^0.2.0",
+    "karma-jasmine": "^0.2.3",
+    "karma-opera-launcher": "^0.2.0",
+    "karma-phantomjs-launcher": "^0.2.0",
+    "karma-safari-launcher": "^0.1.1",
+    "supertest": "^0.15.0"
   }
 }

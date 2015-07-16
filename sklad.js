@@ -41,7 +41,7 @@ Sklad.prototype.set = function (key, value, strict) {
     var stringValue = JSON.stringify(value);
 
     if (!stringValue) {
-        return r.reject("Bad param - value");
+        stringValue = String(value);
     }
 
     queue
@@ -138,8 +138,8 @@ sklad = new Sklad();
 var triggerChangeEvent = function (event) {
     var eventName = 'change:' + event.key;
 
-    this.emit(eventName, event.newValue);
-}.bind(sklad);
+    sklad.emit(eventName, event.newValue);
+};
 
 /**
  * Подписываемся на изменение значений в localStorage
