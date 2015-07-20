@@ -66,6 +66,26 @@ describe('Sklad:', function () {
         }
     });
 
+    describe('check remove:', function () {
+        var removeItem;
+
+        beforeEach(function() {
+            var item;
+            localStorage.clear();
+
+            for (var i = 0; i < types.length; i++) {
+                item = types[i];
+                sklad.set('test-' + item.type, item.val);
+            }
+        });
+
+        for (var i = 0; i < types.length; i++) {
+            removeItem = types[i];
+            sklad.remove('test-' + removeItem.type);
+            removeTest(removeItem);
+        }
+    });
+
     function setTest(item, strict) {
         var value;
         var etalon = getString(item.val);
@@ -89,7 +109,19 @@ describe('Sklad:', function () {
         }
 
         it('get' + item.type, function () {
-            expect(res.getResult()).toEqual(etalon);
+            if (type === 'json' && (item.val instanceof Function || item.val instanceof RegExp)) {
+                expect(res.getResult()).not.toEqual(etalon);
+            } else {
+                expect(res.getResult()).toEqual(etalon);
+            }
+        });
+    }
+
+    function removeTest(item) {
+        var removed = sklad.getValue('test-' + item.type);
+
+        it('remove', function () {
+            expect(removed).toBeNull();
         });
     }
 
