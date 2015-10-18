@@ -180,10 +180,10 @@ function subscribeToStorage(handler) {
         document.attachEvent('onstorage', handler);
     } else if (window.opera || /webkit/i.test( navigator.userAgent )){
         // Note: Opera and WebKits listens on window
-        return window.addEventListener('storage', handler, false);
+        window.addEventListener('storage', handler, false);
     } else {
         // Note: FF listens on document.body or document
-        return document.body.addEventListener('storage', handler, false);
+        document.body.addEventListener('storage', handler, false);
     }
 }
 
